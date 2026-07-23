@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>편의점 스마트 지도 & 재고 조회 (카카오맵)</title>
+    <title>편의점 스마트 지도 & 재고 조회 (구글 맵 최신 버전)</title>
     <style>
         :root {
             --font-size-base: 1rem;
@@ -11,15 +11,15 @@
         }
 
         body.large-font {
-            --font-size-base: 1.4rem;
-            --btn-padding: 16px 24px;
+            --font-size-base: 1.35rem;
+            --btn-padding: 15px 22px;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
             padding: 10px;
-            background-color: #f4f4f9;
+            background-color: #f8f9fa;
             color: #333;
             font-size: var(--font-size-base);
         }
@@ -32,13 +32,13 @@
             background: white;
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         h2 {
-            font-size: calc(var(--font-size-base) * 1.4);
+            font-size: calc(var(--font-size-base) * 1.3);
             text-align: center;
-            color: #2c3e50;
+            color: #1a73e8;
             margin-top: 5px;
         }
 
@@ -49,7 +49,7 @@
         label {
             display: block;
             margin-bottom: 5px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         input, select, button {
@@ -57,23 +57,30 @@
             padding: var(--btn-padding);
             font-size: var(--font-size-base);
             box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
             margin-top: 4px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
         }
 
         button {
-            background-color: #fee500;
-            color: #381e1f;
+            background-color: #1a73e8;
+            color: white;
             border: none;
             cursor: pointer;
             font-weight: bold;
             margin-top: 8px;
-            border-radius: 6px;
+            border-radius: 8px;
+            transition: background 0.2s;
         }
 
         button:hover {
-            background-color: #fdd800;
+            background-color: #1557b0;
         }
 
         #map {
@@ -81,15 +88,15 @@
             height: 380px;
             margin-top: 12px;
             border-radius: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #dadce0;
         }
 
         #result {
             margin-top: 15px;
             white-space: pre-wrap;
-            background: #ecf0f1;
+            background: #f1f3f4;
             padding: 12px;
-            border-radius: 6px;
+            border-radius: 8px;
             line-height: 1.5;
             font-size: calc(var(--font-size-base) * 0.95);
         }
@@ -99,25 +106,26 @@
         }
 
         .app-banner {
-            background: #fee500;
-            color: #381e1f;
+            background: #e8f0fe;
+            color: #1a73e8;
             padding: 10px;
-            border-radius: 6px;
+            border-radius: 8px;
             text-align: center;
             font-size: 0.9rem;
             font-weight: bold;
             margin-bottom: 12px;
+            border: 1px solid #d2e3fc;
         }
     </style>
-    <!-- 카카오 맵 API 스크립트 (YOUR_KAKAO_APP_KEY 부분에 실제 카카오 개발자 앱 키 입력 필요) -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services"></script>
+    <!-- Google Maps API 최신 버전 스크립트 (YOUR_GOOGLE_MAPS_API_KEY 부분에 실제 구글 맵 API 키 입력 필요) -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
 </head>
 <body>
 
     <!-- 초기 설정 화면 (나이 및 경로 색상 선택) -->
     <div id="setup-modal" class="container">
-        <h2>카카오맵 연동 스마트 편의점 지도</h2>
-        <p style="text-align: center; color: #666; font-size: 0.9rem;">나이 및 경로 색상을 설정해주세요</p>
+        <h2>구글 맵 최신 버전 스마트 편의점</h2>
+        <p style="text-align: center; color: #5f6368; font-size: 0.9rem;">나이 및 경로 색상을 설정해주세요</p>
         <div class="input-group">
             <label for="age-input">나이를 입력해주세요:</label>
             <input type="number" id="age-input" placeholder="예: 30" min="1" max="120" value="30">
@@ -125,11 +133,11 @@
         <div class="input-group">
             <label for="color-input">가장 가까운 편의점 이동 경로 색상:</label>
             <select id="color-input">
-                <option value="#3498db">파란색</option>
-                <option value="#e74c3c">빨간색</option>
-                <option value="#2ecc71">초록색</option>
-                <option value="#9b59b6">보라색</option>
-                <option value="#e67e22">주황색</option>
+                <option value="#1a73e8">파란색 (구글 기본)</option>
+                <option value="#ea4335">빨간색</option>
+                <option value="#34a853">초록색</option>
+                <option value="#9334e6">보라색</option>
+                <option value="#fa7b17">주황색</option>
             </select>
         </div>
         <button onclick="completeSetup()">설정 완료 및 시작하기</button>
@@ -137,11 +145,11 @@
 
     <!-- 메인 앱 화면 -->
     <div id="app-container" class="container hidden">
-        <div class="app-banner">📱 카카오맵 & 모바일 웹앱 호환 모드</div>
+        <div class="app-banner">📱 구글 맵 최신 버전 & 모바일 웹앱 호환</div>
         <h2>편의점 지도 & 재고 조회</h2>
         
         <div class="input-group">
-            <label for="location-input">현재 위치 입력:</label>
+            <label for="location-input">현재 위치 입력 (주소 또는 장소명):</label>
             <input type="text" id="location-input" placeholder="예: 서울시 강남구 역삼동">
         </div>
 
@@ -167,7 +175,7 @@
 
         <button onclick="findStoreAndMap()">가장 가까운 편의점 찾기 및 재고 확인</button>
         
-        <!-- 카카오맵 지도 영역 -->
+        <!-- 구글 맵 지도 영역 -->
         <div id="map"></div>
 
         <div id="result"></div>
@@ -177,8 +185,9 @@
         let map = null;
         let userMarker = null;
         let storeMarkers = [];
-        let polyline = null;
-        let userRouteColor = '#3498db';
+        let routePolyline = null;
+        let userRouteColor = '#1a73e8';
+        let geocoder = null;
 
         const itemCategories = {
             food: ['참치마요 삼각김밥', '스팸김치 도시락', '치킨치즈 샌드위치', '불고기 햄버거'],
@@ -218,41 +227,48 @@
             document.getElementById('setup-modal').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
 
-            // 카카오맵 초기화
+            // 구글 맵 초기화 (최신 지도 스타일 및 제어 옵션 적용)
             setTimeout(() => {
-                const container = document.getElementById('map');
-                const options = {
-                    center: new kakao.maps.LatLng(37.5666, 126.9784),
-                    level: 3
-                };
-                map = new kakao.maps.Map(container, options);
+                const defaultLatLng = { lat: 37.5666, lng: 126.9784 };
+                map = new google.maps.Map(document.getElementById('map'), {
+                    center: defaultLatLng,
+                    zoom: 16,
+                    mapId: "DEMO_MAP_ID", // 최신 구글 맵 AdvancedMarker 지원 ID
+                    streetViewControl: false,
+                    fullscreenControl: false
+                });
+                geocoder = new google.maps.Geocoder();
 
-                updateUserPosition(37.5666, 126.9784);
+                updateUserPosition(defaultLatLng);
             }, 300);
         }
 
         // 1 & 2. 빨간색 화살표로 내 위치 표현 및 이동
-        function updateUserPosition(lat, lng) {
+        function updateUserPosition(latLng) {
             if (!map) return;
-            const moveLatLon = new kakao.maps.LatLng(lat, lng);
-            map.setCenter(moveLatLon);
+            map.setCenter(latLng);
 
             if (userMarker) {
                 userMarker.setMap(null);
             }
 
-            const content = `<div style="font-size: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));">🔺</div>`;
-            const customOverlay = new kakao.maps.CustomOverlay({
-                position: moveLatLon,
-                content: content,
-                yAnchor: 1
+            // 구글 맵 커스텀 HTML 마커 (빨간색 화살표)
+            const markerDiv = document.createElement('div');
+            markerDiv.innerHTML = `<div style="font-size: 30px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); transform: translate(-50%, -50%);">🔺</div>`;
+
+            userMarker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"><text y="20" font-size="20">🔺</text></svg>'),
+                    anchor: new google.maps.Point(18, 18)
+                },
+                title: '내 위치'
             });
-            customOverlay.setMap(map);
-            userMarker = customOverlay;
         }
 
         // 4. 30살 평균 시력이 잘 보이는 편의점 로고 마커 생성
-        function createStoreOverlay(lat, lng, brand, stockStatus, url) {
+        function createStoreMarker(latLng, brand, stockStatus, url) {
             let bg = '#333';
             let text = '편의점';
             if(brand.includes('CU')) { bg = '#6A0DAD'; text = 'CU'; }
@@ -260,20 +276,32 @@
             else if(brand.includes('세븐일레븐')) { bg = '#FF6600'; text = '7-11'; }
             else if(brand.includes('이마트24')) { bg = '#FFCC00'; text = 'e24'; }
 
-            const content = document.createElement('div');
-            content.innerHTML = `<div style="background-color: ${bg}; color: white; padding: 6px 12px; border-radius: 24px; font-weight: 800; font-size: 14px; text-align: center; box-shadow: 0 3px 6px rgba(0,0,0,0.35); border: 2.5px solid white; cursor: pointer;">🏪 ${text}</div>`;
-            
-            content.onclick = function() {
-                window.open(url, '_blank');
-            };
+            const svgIcon = `data:image/svg+xml;charset=UTF-8,` + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="90" height="42">
+                    <rect x="2" y="2" width="86" height="38" rx="19" fill="${bg}" stroke="white" stroke-width="3" />
+                    <text x="45" y="26" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="15" text-anchor="middle">🏪 ${text}</text>
+                </svg>
+            `);
 
-            const overlay = new kakao.maps.CustomOverlay({
-                position: new kakao.maps.LatLng(lat, lng),
-                content: content,
-                yAnchor: 1
+            const marker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                icon: {
+                    url: svgIcon,
+                    anchor: new google.maps.Point(45, 21)
+                },
+                title: brand
             });
-            overlay.setMap(map);
-            storeMarkers.push(overlay);
+
+            const infowindow = new google.maps.InfoWindow({
+                content: `<div style="padding:8px; font-size:14px;"><b>${brand}</b><br>재고 상태: ${stockStatus}<br><a href="${url}" target="_blank" style="color:#1a73e8; font-weight:bold;">공식 사이트 바로가기</a></div>`
+            });
+
+            marker.addListener('click', () => {
+                infowindow.open(map, marker);
+            });
+
+            storeMarkers.push(marker);
         }
 
         function findStoreAndMap() {
@@ -286,61 +314,59 @@
                 return;
             }
 
-            resultDiv.innerText = '카카오맵 주소 검색 및 공식 브랜드 사이트 재고 연동 중...';
+            resultDiv.innerText = '구글 맵 최신 버전 주소 분석 및 공식 브랜드 재고 연동 중...';
 
-            const geocoder = new kakao.maps.services.Geocoder();
-            geocoder.addressSearch(locationStr, function(result, status) {
-                if (status === kakao.maps.services.Status.OK) {
-                    const userLat = result[0].y;
-                    const userLng = result[0].x;
+            geocoder.geocode({ address: locationStr }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    const userLoc = results[0].geometry.location;
 
                     // 2. 이동할 때마다 화살표 이동
-                    updateUserPosition(userLat, userLng);
+                    updateUserPosition(userLoc);
 
-                    // 기존 마커 및 선 제거
+                    // 기존 마커 및 경로 제거
                     storeMarkers.forEach(m => m.setMap(null));
                     storeMarkers = [];
-                    if (polyline) {
-                        polyline.setMap(null);
+                    if (routePolyline) {
+                        routePolyline.setMap(null);
                     }
 
-                    const latNum = parseFloat(userLat);
-                    const lngNum = parseFloat(userLng);
+                    const lat = userLoc.lat();
+                    const lng = userLoc.lng();
 
                     const nearbyStores = [
-                        { name: 'CU 강남점', lat: latNum + 0.0012, lng: lngNum + 0.0010, stock: '재고 있음 (3개)', url: 'https://www.pocketcu.co.kr' },
-                        { name: 'GS25 역삼역점', lat: latNum - 0.0015, lng: lngNum + 0.0016, stock: '재고 있음 (1개)', url: 'https://danji.gsretail.com' },
-                        { name: '세븐일레븐 테헤란점', lat: latNum + 0.0008, lng: lngNum - 0.0014, stock: '품절 임박', url: 'https://www.7-eleven.co.kr' }
+                        { name: 'CU 강남점', lat: lat + 0.0012, lng: lng + 0.0010, stock: '재고 있음 (3개)', url: 'https://www.pocketcu.co.kr' },
+                        { name: 'GS25 역삼역점', lat: lat - 0.0015, lng: lng + 0.0016, stock: '재고 있음 (1개)', url: 'https://danji.gsretail.com' },
+                        { name: '세븐일레븐 테헤란점', lat: lat + 0.0008, lng: lng - 0.0014, stock: '품절 임박', url: 'https://www.7-eleven.co.kr' }
                     ];
 
-                    // 4. 편의점 로고 표시
+                    // 4. 편의점 로고 표시 (30세 시력 기준 뚜렷한 가독성)
                     nearbyStores.forEach(store => {
-                        createStoreOverlay(store.lat, store.lng, store.name, store.stock, store.url);
+                        createStoreMarker({ lat: store.lat, lng: store.lng }, store.name, store.stock, store.url);
                     });
 
                     // 3. 가장 가까운 편의점 경로 색상 사용자 설정 반영
                     const nearest = nearbyStores[0];
-                    const linePath = [
-                        new kakao.maps.LatLng(latNum, lngNum),
-                        new kakao.maps.LatLng(latNum + 0.0006, lngNum + 0.0005),
-                        new kakao.maps.LatLng(nearest.lat, nearest.lng)
+                    const pathCoords = [
+                        userLoc,
+                        { lat: lat + 0.0006, lng: lng + 0.0005 },
+                        { lat: nearest.lat, lng: nearest.lng }
                     ];
 
-                    polyline = new kakao.maps.Polyline({
-                        path: linePath,
-                        strokeWeight: 6,
+                    routePolyline = new google.maps.Polyline({
+                        path: pathCoords,
+                        geodesic: true,
                         strokeColor: userRouteColor,
                         strokeOpacity: 0.85,
-                        strokeStyle: 'solid'
+                        strokeWeight: 6
                     });
-                    polyline.setMap(map);
+                    routePolyline.setMap(map);
 
                     resultDiv.innerHTML = `<b>[${nearest.name} 재고 연동 안내]</b><br>` +
                         `- 찾으시는 물건: <b>${selectedItem}</b><br>` +
                         `- 공식 사이트 재고 상태: <b>${nearest.stock}</b><br>` +
-                        `- 설정하신 경로 색상으로 가장 가까운 편의점까지 안내됩니다. (마커 클릭 시 공식 사이트 이동)`;
+                        `- 설정하신 경로 색상으로 가장 가까운 편의점까지 안내됩니다. (편의점 마커 클릭 시 공식 사이트 연동)`;
                 } else {
-                    resultDiv.innerText = '카카오맵에서 해당 주소를 찾을 수 없습니다. 정확한 주소를 입력해주세요.';
+                    resultDiv.innerText = '구글 맵에서 해당 위치를 찾을 수 없습니다. 정확한 주소를 입력해주세요.';
                 }
             });
         }
