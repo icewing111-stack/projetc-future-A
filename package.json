@@ -1,8 +1,0 @@
-{
-  "name": "convenience-store-map-app",
-  "version": "1.0.0",
-  "description": "Vercel serverless app with Leaflet Map, Gemini API for convenience store search and inventory",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  }
-}
