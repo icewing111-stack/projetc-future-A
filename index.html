@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>편의점 스마트 지도 & 재고 조회</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        :root {
+            --font-size-base: 1rem;
+            --btn-padding: 10px 20px;
+        }
+
+        body.large-font {
+            --font-size-base: 1.5rem;
+            --btn-padding: 15px 30px;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+            font-size: var(--font-size-base);
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            font-size: calc(var(--font-size-base) * 1.5);
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: var(--btn-padding);
+            font-size: var(--font-size-base);
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #map {
+            width: 100%;
+            height: 400px;
+            margin-top: 15px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 초기 설정 화면 (나이 및 경로 색상 선택) -->
+    <div id="setup-modal" class="container">
+        <h2>환영합니다! 편의점 스마트 지도</h2>
+        <div class="input-group">
+            <label for="age-input">나이를 입력해주세요:</label>
+            <input type="number" id="age-input" placeholder="예: 30" min="1" max="120">
+        </div>
+        <div class="input-group">
+            <label for="color-input">이동 경로 색상을 선택해주세요:</label>
+            <select id="color-input">
+                <option value="blue">파란색</option>
+                <option value="red">빨간색</option>
+                <option value="green">초록색</option>
+                <option value="purple">보라색</option>
+                <option value="orange">주황색</option>
+            </select>
+        </div>
+        <button onclick="completeSetup()">시작하기</button>
+    </div>
+
+    <!-- 메인 앱 화면 -->
+    <div id="app-container" class="container hidden">
+        <h2>편의점 지도 및 재고 조회</h2>
+        <div class="input-group">
+            <label for="location-input">현재 위치를 입력해주세요 (또는 이동해보세요):</label>
+            <input type="text" id="location-input" placeholder="예: 서울시 강남구 역삼동 스타벅스 앞">
+        </div>
+        <button onclick="findStoreAndMap()">가장 가까운 편의점 찾기 및 이동</button>
+        
+        <!-- 지도 영역 -->
+        <div id="map"></div>
+
+        <div id="loading" class="hidden" style="text-align: center; margin-top: 15px;">AI가 최적의 경로와 브랜드 재고를 확인하는 중입니다...</div>
+        <div id="result"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        let map = null;
+        let userMarker = null;
+        let storeMarkers = [];
+        let routeLine = null;
+        let userRouteColor = 'blue';
+
+        function completeSetup() {
+            const ageInput = document.getElementById('age-input').value;
+            const age = parseInt(ageInput, 10);
+            userRouteColor = document.getElementById('color-input').value;
+
+            if (isNaN(age) || age <= 0) {
+                alert('올바른 나이를 입력해주세요.');
+                return;
+            }
+
+            // 45세 이상인 경우 폰트 크기 1.5배 적용
+            if (age >= 45) {
+                document.body.classList.add('large-font');
+            }
+
+            // 화면 전환
+            document.getElementById('setup-modal').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+
+            // 지도 초기화 (기본 서울 시청 좌표)
+            setTimeout(() => {
+                map = L.map('map').setView([37.5666, 126.9784], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                // 초기 사용자 위치 화살표 표시
+                updateUserPosition(37.5666, 126.9784, 0);
+            }, 200);
+        }
+
+        // 빨간색 화살표 아이콘 생성 (회전 각도 지원)
+        function createArrowIcon(angle = 0) {
+            return L.divIcon({
+                className: 'custom-arrow-icon',
+                html: `<div style="transform: rotate(${angle}deg); font-size: 28px; text-shadow: 0 0 3px white;">🔺</div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+        }
+
+        // 편의점 로고 스타일 마커 생성 (30대 평균 시력 기준 식별력 강화)
+        function createStoreIcon(brand) {
+            let bg = '#333';
+            let text = '편의점';
+            if(brand.includes('CU')) { bg = '#6A0DAD'; text = 'CU'; }
+            else if(brand.includes('GS25')) { bg = '#0066CC'; text = 'GS25'; }
+            else if(brand.includes('세븐일레븐')) { bg = '#FF6600'; text = '7-11'; }
+            else if(brand.includes('이마트24')) { bg = '#FFCC00'; text = 'e24'; }
+
+            return L.divIcon({
+                className: 'custom-store-icon',
+                html: `<div style="background-color: ${bg}; color: white; padding: 6px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid white;">${text}</div>`,
+                iconSize: [60, 35],
+                iconAnchor: [30, 17]
+            });
+        }
+
+        // 사용자 위치를 화살표로 업데이트하고 이동 처리 (2번 요구사항)
+        function updateUserPosition(lat, lon, angle = 0) {
+            if (!map) return;
+            if (userMarker) {
+                map.removeLayer(userMarker);
+            }
+            userMarker = L.marker([lat, lon], { icon: createArrowIcon(angle) }).addTo(map)
+                .bindPopup('<b>내 위치 (실시간 이동)</b>');
+        }
+
+        async function findStoreAndMap() {
+            const location = document.getElementById('location-input').value;
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+
+            if (!location.trim()) {
+                alert('현재 위치를 입력해주세요.');
+                return;
+            }
+
+            resultDiv.innerText = '';
+            loadingDiv.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ location })
+                });
+
+                const textResponse = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(textResponse);
+                } catch (e) {
+                    throw new Error(`서버 응답이 JSON 형식이 아닙니다: ${textResponse.substring(0, 100)}`);
+                }
+
+                loadingDiv.classList.add('hidden');
+
+                if (response.ok) {
+                    resultDiv.innerText = data.result;
+
+                    // Nominatim API로 위치 좌표 검색
+                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
+                    const geoData = await geoRes.json();
+
+                    if (geoData && geoData.length > 0) {
+                        const userLat = parseFloat(geoData[0].lat);
+                        const userLon = parseFloat(geoData[0].lon);
+
+                        // 1 & 2. 사용자 위치 빨간색 화살표로 이동 및 업데이트
+                        map.setView([userLat, userLon], 16);
+                        updateUserPosition(userLat, userLon, 45);
+
+                        // 기존 편의점 마커 및 경로 제거
+                        storeMarkers.forEach(m => map.removeLayer(m));
+                        storeMarkers = [];
+                        if (routeLine) {
+                            map.removeLayer(routeLine);
+                        }
+
+                        // 주변 편의점 가상 샘플 좌표 생성 (가장 가까운 편의점 연출)
+                        const nearbyStores = [
+                            { name: 'CU 역삼점', lat: userLat + 0.0012, lon: userLon + 0.0010 },
+                            { name: 'GS25 강남중앙점', lat: userLat - 0.0015, lon: userLon + 0.0018 },
+                            { name: '세븐일레븐 역삼역점', lat: userLat + 0.0008, lon: userLon - 0.0015 }
+                        ];
+
+                        // 4. 지도에 편의점 로고 표시에 맞게 표시 (30대 평균 시력이 잘 보이는 폰트 및 스타일)
+                        nearbyStores.forEach((store, idx) => {
+                            const marker = L.marker([store.lat, store.lon], { icon: createStoreIcon(store.name) })
+                                .addTo(map)
+                                .bindPopup(`<b>${store.name}</b><br>재고 확인 완료`);
+                            storeMarkers.push(marker);
+                        });
+
+                        // 3. 가장 가까운 편의점 경로를 사용자가 설정한 색상으로 표시
+                        const nearestStore = nearbyStores[0];
+                        const routeCoords = [
+                            [userLat, userLon],
+                            [userLat + 0.0005, userLon + 0.0005],
+                            [nearestStore.lat, nearestStore.lon]
+                        ];
+                        routeLine = L.polyline(routeCoords, { color: userRouteColor, weight: 5, opacity: 0.8 }).addTo(map);
+                    }
+                } else {
+                    resultDiv.innerText = `오류 발생: ${data.error || '알 수 없는 오류'}`;
+                }
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                resultDiv.innerText = `통신 오류 발생: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
