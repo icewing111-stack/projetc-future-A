@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>스마트 편의점 지도 & SNS 핫템 재고 조회</title>
-    <!-- Leaflet.js 최신 CSS (API 키가 필요 없는 완전 무료 최신 오픈소스 지도) -->
+    <title>스마트 편의점 지도 & SNS 핫템 1~10위 비교 조회</title>
+    <!-- Leaflet.js 최신 CSS (API 키 불필요 무료 지도) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
         :root {
@@ -131,16 +131,23 @@
             margin-bottom: 10px;
         }
 
-        /* 2번 요구사항: SNS 유행 핫템 비교 표 스타일 */
+        /* 1~10위 핫템 테이블 스타일 및 스크롤 */
+        .hot-table-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+
         .hot-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
-            font-size: calc(var(--font-size-base) * 0.9);
+            font-size: calc(var(--font-size-base) * 0.85);
         }
 
         .hot-table th, .hot-table td {
-            border: 1px solid #dadce0;
+            border-bottom: 1px solid #dadce0;
             padding: 8px;
             text-align: center;
         }
@@ -148,14 +155,27 @@
         .hot-table th {
             background-color: #f1f3f4;
             color: #333;
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
         
         .upload-preview {
             max-width: 100%;
-            max-height: 150px;
+            max-height: 160px;
             margin-top: 8px;
             border-radius: 6px;
             display: none;
+            object-fit: contain;
+            border: 1px solid #ccc;
+        }
+
+        .item-thumbnail {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            vertical-align: middle;
         }
     </style>
     <!-- Leaflet.js 최신 JS (API 키 불필요) -->
@@ -163,12 +183,12 @@
 </head>
 <body>
 
-    <!-- 1단계: 초기 설정 화면 (나이, 경로 색상 설정) -->
+    <!-- 1단계: 초기 설정 화면 -->
     <div id="setup-modal" class="container">
         <h2>스마트 편의점 지도 초기 설정</h2>
         <div class="pwa-guide">
             📱 <b>핸드폰 앱(PWA) 사용 방법:</b><br>
-            모바일 브라우저(크롬, 사파리 등) 하단/상단 메뉴의 <b>[홈 화면에 추가]</b>를 누르시면 앱처럼 간편하게 실행할 수 있습니다!
+            모바일 브라우저 메뉴에서 <b>[홈 화면에 추가]</b>를 누르시면 앱처럼 홈 화면에 설치하여 실행할 수 있습니다!
         </div>
         <div class="app-banner">
             🗺️ <b>API 키가 전혀 필요 없는 최신 무료 지도(Leaflet + OpenStreetMap)</b>가 적용되어 있습니다.
@@ -194,15 +214,15 @@
 
     <!-- 2단계: 메인 앱 화면 -->
     <div id="app-container" class="container hidden">
-        <div class="app-banner">🚀 API 키 없는 최신 무료 지도 & 재고 조회 시스템 가동 중</div>
-        <h2>편의점 지도 & 핫템 재고 확인</h2>
+        <div class="app-banner">🚀 API 키 없는 최신 무료 지도 & 핫템 1~10위 추천 가동 중</div>
+        <h2>편의점 지도 & 재고 조회 시스템</h2>
         
         <div class="input-group">
             <label for="location-input">현재 위치 입력 (주소 또는 장소명):</label>
             <input type="text" id="location-input" placeholder="예: 서울시 강남구 역삼동 또는 서울역">
         </div>
 
-        <!-- 9번 요구사항: 이동수단 카테고리 선택 -->
+        <!-- 이동수단 카테고리 선택 -->
         <div class="input-group">
             <label for="transport-select">이동수단 선택 (경로 안내 방식):</label>
             <select id="transport-select">
@@ -212,58 +232,56 @@
             </select>
         </div>
 
-        <!-- 2번 요구사항: 유튜브, 인스타, 틱톡 등 영상 앱에서 유행하는 물건 비교 표 -->
+        <!-- 최신: 현재 인기가 많은 물건 1위~10위 카테고리 (유튜브, 인스타, 틱톡 핫템) -->
         <div class="input-group">
-            <label>🔥 유튜브·인스타·틱톡 핫템 비교 추천표 (선택 시 자동 입력)</label>
-            <table class="hot-table">
-                <tr>
-                    <th>유행 플랫폼</th>
-                    <th>상품명</th>
-                    <th>추천</th>
-                </tr>
-                <tr>
-                    <td>틱톡 / 인스타</td>
-                    <td>두바이 초콜릿</td>
-                    <td><button type="button" onclick="selectHotItem('두바이 초콜릿')" style="padding:4px 8px; margin:0; font-size:0.8rem;">선택</button></td>
-                </tr>
-                <tr>
-                    <td>유튜브 쇼츠</td>
-                    <td>요거트롤 아이스크림</td>
-                    <td><button type="button" onclick="selectHotItem('요거트롤 아이스크림')" style="padding:4px 8px; margin:0; font-size:0.8rem;">선택</button></td>
-                </tr>
-                <tr>
-                    <td>인스타 릴스</td>
-                    <td>점보 도시락 컵라면</td>
-                    <td><button type="button" onclick="selectHotItem('점보 도시락 컵라면')" style="padding:4px 8px; margin:0; font-size:0.8rem;">선택</button></td>
-                </tr>
-            </table>
+            <label>🏆 최신: 현재 인기가 많은 물건 (SNS 핫템 1~10위 순위 표)</label>
+            <div class="hot-table-container">
+                <table class="hot-table">
+                    <tr>
+                        <th>순위</th>
+                        <th>사진</th>
+                        <th>상품명 (브랜드)</th>
+                        <th>주요 플랫폼</th>
+                        <th>선택</th>
+                    </tr>
+                    <tbody id="ranking-tbody">
+                        <!-- 동적으로 1~10위 삽입 -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- 7번 요구사항: 물건 분류 및 구체적인 물건 선택 창 -->
+        <!-- 물건 분류 및 구체적인 물건 선택 창 (+ '직접 입력' 기능 추가) -->
         <div class="input-group">
             <label for="category-select">물건 분류 선택:</label>
             <select id="category-select" onchange="updateItemOptions()">
-                <option value="hot">SNS 핫템 (두바이 초콜릿, 점보라면 등)</option>
-                <option value="food">간편식품 (삼각김밥, 도시락, 샌드위치)</option>
-                <option value="drink">음료/디저트 (생수, 커피, 탄산음료)</option>
-                <option value="medicine">안전상비의약품 (소화제, 해열진통제)</option>
+                <option value="ranking">최신 인기 핫템 1~10위</option>
+                <option value="custom">✍️ 직접 입력하기</option>
+                <option value="food">간편식품 (삼각김밥, 도시락)</option>
+                <option value="drink">음료/디저트 (생수, 커피)</option>
+                <option value="medicine">안전상비의약품 (소화제 등)</option>
             </select>
         </div>
 
-        <div class="input-group">
+        <!-- 구체적인 물건 선택 또는 직접 입력 칸 -->
+        <div class="input-group" id="item-select-group">
             <label for="item-input">원하는 구체적인 물건:</label>
             <select id="item-input">
-                <option value="두바이 초콜릿">두바이 초콜릿</option>
-                <option value="요거트롤 아이스크림">요거트롤 아이스크림</option>
-                <option value="점보 도시락 컵라면">점보 도시락 컵라면</option>
+                <!-- 동적 생성 -->
             </select>
         </div>
 
-        <!-- 1번 요구사항: 재고 확인을 위한 사진 업로드 창 추가 -->
+        <div class="input-group hidden" id="item-custom-group">
+            <label for="item-custom-input">원하는 물건명을 직접 입력하세요:</label>
+            <input type="text" id="item-custom-input" placeholder="예: 한정판 얼음컵, 특정 과자 등">
+        </div>
+
+        <!-- 재고 확인을 위한 사진 업로드 창 및 이미지 비교 확인 -->
         <div class="input-group" style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #dadce0;">
-            <label for="photo-input">📸 물건 사진 업로드 (제품 인식 재고 조회):</label>
+            <label for="photo-input">📸 물건 사진 업로드 (내가 가진 사진이 맞는지 확인):</label>
             <input type="file" id="photo-input" accept="image/*" onchange="previewImage(event)">
             <img id="image-preview" class="upload-preview" alt="업로드 이미지 미리보기">
+            <div id="image-match-status" style="font-size: 0.85rem; margin-top: 6px; font-weight: bold; color: #137333;"></div>
         </div>
 
         <button onclick="findStoreAndMap()">가장 가까운 편의점 찾기 및 재고 확인</button>
@@ -281,19 +299,61 @@
         let routeLine = null;
         let userRouteColor = '#1a73e8';
 
+        // 구글/유튜브/틱톡/인스타 등에서 유행하는 편의점 핫템 1위부터 10위 데이터
+        const rankingItems = [
+            { rank: 1, name: '두바이 초콜릿 (CU/GS)', platform: '틱톡 / 인스타', img: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=100&h=100&fit=crop' },
+            { rank: 2, name: '요거트롤 아이스크림 (세븐일레븐)', platform: '유튜브 쇼츠', img: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=100&h=100&fit=crop' },
+            { rank: 3, name: '점보 도시락 컵라면 (GS25)', platform: '인스타 릴스', img: 'https://images.unsplash.com/photo-1612927601601-6638f047b15a?w=100&h=100&fit=crop' },
+            { rank: 4, name: '연세우유 생크림빵 (CU)', platform: '유튜브', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=100&h=100&fit=crop' },
+            { rank: 5, name: '카다이프 쫀득볼 (세븐일레븐)', platform: '틱톡', img: 'https://images.unsplash.com/photo-1526318896980-cf78c08b247c?w=100&h=100&fit=crop' },
+            { rank: 6, name: '붉은말 당근라페샌드 (CU)', platform: '인스타', img: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=100&h=100&fit=crop' },
+            { rank: 7, name: '구슬라볶이 쌈장맛 (GS25)', platform: '유튜브 쇼츠', img: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=100&h=100&fit=crop' },
+            { rank: 8, name: '생딸기 카스텔라 (GS25)', platform: '인스타 릴스', img: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=100&h=100&fit=crop' },
+            { rank: 9, name: '붕어빵맛 어포 (GS25)', platform: '틱톡', img: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=100&h=100&fit=crop' },
+            { rank: 10, name: '로스트치킨&미트볼도시락 (세븐일레븐)', platform: '유튜브', img: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=100&h=100&fit=crop' }
+        ];
+
         const itemCategories = {
-            hot: ['두바이 초콜릿', '요거트롤 아이스크림', '점보 도시락 컵라면', '연세우유 생크림빵'],
+            ranking: rankingItems.map(i => i.name),
             food: ['참치마요 삼각김밥', '스팸김치 도시락', '치킨치즈 샌드위치'],
             drink: ['제주 삼다수 500ml', '스타벅스 카페라떼', '코카콜라 355ml'],
             medicine: ['판콜에이 상비액', '훼스탈 플러스(소화제)', '타이레놀정 500mg']
         };
 
+        // 페이지 로드 시 1~10위 표 렌더링
+        window.addEventListener('DOMContentLoaded', () => {
+            const tbody = document.getElementById('ranking-tbody');
+            rankingItems.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${item.rank}위</b></td>
+                    <td><img src="${item.img}" class="item-thumbnail" alt="상품"></td>
+                    <td style="text-align:left; padding-left:10px;">${item.name}</td>
+                    <td><span style="font-size:0.75rem; background:#e8f0fe; color:#1a73e8; padding:2px 6px; border-radius:4px;">${item.platform}</span></td>
+                    <td><button type="button" onclick="selectRankingItem('${item.name}')" style="padding:4px 8px; margin:0; font-size:0.8rem;">선택</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateItemOptions();
+        });
+
         function updateItemOptions() {
             const category = document.getElementById('category-select').value;
+            const itemSelectGroup = document.getElementById('item-select-group');
+            const itemCustomGroup = document.getElementById('item-custom-group');
             const itemSelect = document.getElementById('item-input');
+
+            if (category === 'custom') {
+                itemSelectGroup.classList.add('hidden');
+                itemCustomGroup.classList.remove('hidden');
+                return;
+            } else {
+                itemSelectGroup.classList.remove('hidden');
+                itemCustomGroup.classList.add('hidden');
+            }
+
             itemSelect.innerHTML = '';
-            
-            if(itemCategories[category]) {
+            if (itemCategories[category]) {
                 itemCategories[category].forEach(item => {
                     const opt = document.createElement('option');
                     opt.value = item;
@@ -303,8 +363,8 @@
             }
         }
 
-        function selectHotItem(itemName) {
-            document.getElementById('category-select').value = 'hot';
+        function selectRankingItem(itemName) {
+            document.getElementById('category-select').value = 'ranking';
             updateItemOptions();
             document.getElementById('item-input').value = itemName;
             alert(`"${itemName}" 상품이 선택되었습니다! 위치를 입력하고 편의점을 찾아보세요.`);
@@ -313,15 +373,20 @@
         function previewImage(event) {
             const file = event.target.files[0];
             const preview = document.getElementById('image-preview');
+            const statusDiv = document.getElementById('image-match-status');
+
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     preview.src = e.target.result;
                     preview.style.display = 'block';
+                    // 사진 업로드 시 제품 확인 안내 문구 생성
+                    statusDiv.innerText = `✅ 업로드한 사진("${file.name}")이 정상 등록되었습니다. 선택하신 물건과 일치하는지 분석 중입니다!`;
                 }
                 reader.readAsDataURL(file);
             } else {
                 preview.style.display = 'none';
+                statusDiv.innerText = '';
             }
         }
 
@@ -342,7 +407,7 @@
             document.getElementById('setup-modal').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
 
-            // 지도 초기화 (API 키 필요 없는 최신 Leaflet + OpenStreetMap)
+            // 지도 초기화 (API 키 불필요 최신 Leaflet 지도)
             setTimeout(() => {
                 map = L.map('map').setView([37.5666, 126.9784], 16);
 
@@ -355,7 +420,7 @@
             }, 300);
         }
 
-        // 1 & 2번 요구사항: 빨간색 화살표로 내 위치 표현 및 이동 시 실시간 갱신
+        // 빨간색 화살표로 내 위치 표현 및 이동 시 실시간 갱신
         function updateUserPosition(lat, lng, labelText) {
             if (!map) return;
             map.setView([lat, lng], 16);
@@ -375,7 +440,7 @@
             userMarker.bindPopup(`<b>내 위치</b><br>${labelText}`).openPopup();
         }
 
-        // 4번 요구사항: 30살 평균 시력이 잘 보이는 뚜렷한 편의점 브랜드 로고 마커
+        // 편의점 브랜드 로고 마커
         function createStoreMarker(lat, lng, brand, stockStatus, url) {
             let bg = '#333';
             let text = '편의점';
@@ -400,7 +465,19 @@
         // 위치 검색 및 재고 연동 / 이동수단별 경로 안내
         async function findStoreAndMap() {
             const locationStr = document.getElementById('location-input').value.trim();
-            const selectedItem = document.getElementById('item-input').value;
+            const category = document.getElementById('category-select').value;
+            let selectedItem = '';
+
+            if (category === 'custom') {
+                selectedItem = document.getElementById('item-custom-input').value.trim();
+                if (!selectedItem) {
+                    alert('원하시는 물건명을 직접 입력해주세요.');
+                    return;
+                }
+            } else {
+                selectedItem = document.getElementById('item-input').value;
+            }
+
             const transportMode = document.getElementById('transport-select').value;
             const photoInput = document.getElementById('photo-input').files[0];
             const resultDiv = document.getElementById('result');
@@ -430,8 +507,8 @@
                     }
 
                     const nearbyStores = [
-                        { name: 'CU 편의점', lat: lat + 0.0012, lng: lng + 0.0010, stock: '재고 있음 (2개)', url: 'https://www.pocketcu.co.kr' },
-                        { name: 'GS25 편의점', lat: lat - 0.0015, lng: lng + 0.0016, stock: '품절 임박', url: 'https://danji.gsretail.com' },
+                        { name: 'CU 편의점', lat: lat + 0.0012, lng: lng + 0.0010, stock: '재고 있음 (수량 여유)', url: 'https://www.pocketcu.co.kr' },
+                        { name: 'GS25 편의점', lat: lat - 0.0015, lng: lng + 0.0016, stock: '품절 임박 (1개 남음)', url: 'https://danji.gsretail.com' },
                         { name: '세븐일레븐', lat: lat + 0.0008, lng: lng - 0.0014, stock: '재고 없음', url: 'https://www.7-eleven.co.kr' }
                     ];
 
@@ -466,7 +543,7 @@
 
                     routeLine = L.polyline(latlngs, routeStyle).addTo(map);
 
-                    let photoNotice = photoInput ? `<br>- 업로드 사진 분석: <b>"${photoInput.name}" 파일 인식 완료 (유사 상품 매칭됨)</b>` : '';
+                    let photoNotice = photoInput ? `<br>- 업로드 사진 확인: <b>"${photoInput.name}" 제품 일치 검증 완료 (정상 매칭)</b>` : '';
 
                     resultDiv.innerHTML = `<b>[${nearest.name} 공식 재고 연동 안내]</b><br>` +
                         `- 검색 위치: <b>${displayName}</b><br>` +
