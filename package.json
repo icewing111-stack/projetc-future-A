@@ -1,8 +1,0 @@
-{
-  "name": "convenience-store-finder",
-  "version": "1.0.0",
-  "description": "Vercel serverless app to find nearest convenience stores and check inventory using Gemini API",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  }
-}
