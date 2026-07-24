@@ -1,7 +1,7 @@
 {
   "name": "convenience-store-app",
   "private": true,
-  "version": "1.0.0",
+  "version": "gemini-3.1-flash-lite",
   "type": "module",
   "scripts": {
     "dev": "vite",
