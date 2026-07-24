@@ -1,6 +1,6 @@
 {
   "name": "convenience-store-app",
-  "version": "1.0.0",
+  "version": "gemini-3.1-flash-lite",
   "description": "Smart Convenience Store Finder with Gemini AI",
   "main": "index.html",
   "dependencies": {
