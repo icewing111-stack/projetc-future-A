@@ -1,0 +1,12 @@
+{
+  "name": "convenience-store-finder",
+  "version": "1.0.0",
+  "description": "AI-powered convenience store finder and assistant",
+  "main": "api/generate.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.1"
+  }
+}
