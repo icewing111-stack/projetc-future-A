@@ -1,6 +1,6 @@
 {
   "name": "convenience-store-finder",
-  "version": "1.0.0",
+  "version": "gemini-3.1-flash-lite",
   "description": "AI-powered convenience store finder and assistant",
   "main": "api/generate.js",
   "scripts": {
