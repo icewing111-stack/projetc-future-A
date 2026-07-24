@@ -1,564 +1,278 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>스마트 편의점 지도 & SNS 핫템 1~10위 비교 조회</title>
-    <!-- Leaflet.js 최신 CSS (API 키 불필요 무료 지도) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>편의점 통합 스마트 플랫폼</title>
     <style>
+        /* 테마별 색상 변수 정의 */
         :root {
-            --font-size-base: 1rem;
-            --btn-padding: 12px 20px;
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --sub-text: #666666;
+            --primary-color: #0066ff;
+            --border-color: #dddddd;
+            --badge-bg: #e6f0ff;
         }
 
-        body.large-font {
-            --font-size-base: 1.35rem;
-            --btn-padding: 15px 22px;
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --sub-text: #aaaaaa;
+            --primary-color: #3b82f6;
+            --border-color: #333333;
+            --badge-bg: #1e3a8a;
+        }
+
+        [data-theme="low-light"] {
+            --bg-color: #050505;
+            --card-bg: #111111;
+            --text-color: #888888;
+            --sub-text: #555555;
+            --primary-color: #444444;
+            --border-color: #222222;
+            --badge-bg: #222222;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Apple SD Gothic Neo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
-            padding: 10px;
-            background-color: #f8f9fa;
-            color: #333;
-            font-size: var(--font-size-base);
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
-            max-width: 100%;
-            width: 100%;
-            box-sizing: border-box;
+            max-width: 800px;
             margin: 0 auto;
-            background: white;
-            padding: 15px;
+        }
+
+        /* 상단 컨트롤러 (테마 및 모드 설정) */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
         }
 
-        h2 {
-            font-size: calc(var(--font-size-base) * 1.3);
-            text-align: center;
-            color: #1a73e8;
-            margin-top: 5px;
-        }
-
-        .input-group {
-            margin-bottom: 12px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        input, select, button {
-            width: 100%;
-            padding: var(--btn-padding);
-            font-size: var(--font-size-base);
-            box-sizing: border-box;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            margin-top: 4px;
-            outline: none;
-        }
-
-        input:focus, select:focus {
-            border-color: #1a73e8;
-            box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
-        }
-
-        button {
-            background-color: #1a73e8;
-            color: white;
-            border: none;
+        .theme-buttons button {
+            padding: 8px 12px;
+            margin-left: 5px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 8px;
-            border-radius: 8px;
-            transition: background 0.2s;
         }
 
-        button:hover {
-            background-color: #1557b0;
+        .theme-buttons button.active {
+            background: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
         }
 
-        #map {
-            width: 100%;
-            height: 380px;
-            margin-top: 12px;
-            border-radius: 8px;
-            border: 1px solid #dadce0;
-            z-index: 1;
+        /* 편의점 카드 스타일 */
+        .store-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s;
         }
 
-        #result {
+        .store-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .store-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .badge-container {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .badge {
+            background: var(--badge-bg);
+            color: var(--text-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge.highlight {
+            background: #ff4d4d;
+            color: white;
+        }
+
+        .badge.emart24-24h {
+            background: #ffcc00;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .store-info p {
+            margin: 6px 0;
+            font-size: 0.95rem;
+            color: var(--sub-text);
+        }
+
+        /* 버튼 모음 */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
             margin-top: 15px;
-            white-space: pre-wrap;
-            background: #f1f3f4;
-            padding: 12px;
-            border-radius: 8px;
-            line-height: 1.5;
-            font-size: calc(var(--font-size-base) * 0.95);
         }
 
-        .hidden {
-            display: none;
-        }
-
-        .app-banner {
-            background: #e8f0fe;
-            color: #1a73e8;
-            padding: 10px;
-            border-radius: 8px;
+        .action-buttons a, .action-buttons button {
+            flex: 1;
             text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            text-decoration: none;
             font-size: 0.9rem;
             font-weight: bold;
-            margin-bottom: 12px;
-            border: 1px solid #d2e3fc;
+            cursor: pointer;
+            border: none;
         }
 
-        .pwa-guide {
-            background: #e6f4ea;
-            border: 1px solid #ceead6;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            color: #137333;
-            margin-bottom: 10px;
+        .btn-stock {
+            background-color: #10b981;
+            color: white;
         }
 
-        /* 1~10위 핫템 테이블 스타일 및 스크롤 */
-        .hot-table-container {
-            max-height: 250px;
-            overflow-y: auto;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            margin-top: 8px;
-        }
-
-        .hot-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: calc(var(--font-size-base) * 0.85);
-        }
-
-        .hot-table th, .hot-table td {
-            border-bottom: 1px solid #dadce0;
-            padding: 8px;
-            text-align: center;
-        }
-
-        .hot-table th {
-            background-color: #f1f3f4;
-            color: #333;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-        
-        .upload-preview {
-            max-width: 100%;
-            max-height: 160px;
-            margin-top: 8px;
-            border-radius: 6px;
-            display: none;
-            object-fit: contain;
-            border: 1px solid #ccc;
-        }
-
-        .item-thumbnail {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 4px;
-            vertical-align: middle;
+        .btn-delivery {
+            background-color: #6366f1;
+            color: white;
         }
     </style>
-    <!-- Leaflet.js 최신 JS (API 키 불필요) -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
 
-    <!-- 1단계: 초기 설정 화면 -->
-    <div id="setup-modal" class="container">
-        <h2>스마트 편의점 지도 초기 설정</h2>
-        <div class="pwa-guide">
-            📱 <b>핸드폰 앱(PWA) 사용 방법:</b><br>
-            모바일 브라우저 메뉴에서 <b>[홈 화면에 추가]</b>를 누르시면 앱처럼 홈 화면에 설치하여 실행할 수 있습니다!
-        </div>
-        <div class="app-banner">
-            🗺️ <b>API 키가 전혀 필요 없는 최신 무료 지도(Leaflet + OpenStreetMap)</b>가 적용되어 있습니다.
-        </div>
-
-        <div class="input-group">
-            <label for="age-input">나이를 입력해주세요 (45세 이상 글씨 확대):</label>
-            <input type="number" id="age-input" placeholder="예: 30" min="1" max="120" value="30">
-        </div>
-
-        <div class="input-group">
-            <label for="color-input">가장 가까운 편의점 이동 경로 색상:</label>
-            <select id="color-input">
-                <option value="#1a73e8">파란색 (기본)</option>
-                <option value="#ea4335">빨간색</option>
-                <option value="#34a853">초록색</option>
-                <option value="#9334e6">보라색</option>
-                <option value="#fa7b17">주황색</option>
-            </select>
-        </div>
-        <button onclick="completeSetup()">설정 완료 및 앱 시작하기</button>
-    </div>
-
-    <!-- 2단계: 메인 앱 화면 -->
-    <div id="app-container" class="container hidden">
-        <div class="app-banner">🚀 API 키 없는 최신 무료 지도 & 핫템 1~10위 추천 가동 중</div>
-        <h2>편의점 지도 & 재고 조회 시스템</h2>
-        
-        <div class="input-group">
-            <label for="location-input">현재 위치 입력 (주소 또는 장소명):</label>
-            <input type="text" id="location-input" placeholder="예: 서울시 강남구 역삼동 또는 서울역">
-        </div>
-
-        <!-- 이동수단 카테고리 선택 -->
-        <div class="input-group">
-            <label for="transport-select">이동수단 선택 (경로 안내 방식):</label>
-            <select id="transport-select">
-                <option value="car">🚗 자동차 (도로 중심 최단 경로 안내)</option>
-                <option value="bike">🚲 자전거 (안전한 인도/자전거도로 우선)</option>
-                <option value="walk">🚶 걷기 (도보 전용 인도 최단 경로)</option>
-            </select>
-        </div>
-
-        <!-- 최신: 현재 인기가 많은 물건 1위~10위 카테고리 (유튜브, 인스타, 틱톡 핫템) -->
-        <div class="input-group">
-            <label>🏆 최신: 현재 인기가 많은 물건 (SNS 핫템 1~10위 순위 표)</label>
-            <div class="hot-table-container">
-                <table class="hot-table">
-                    <tr>
-                        <th>순위</th>
-                        <th>사진</th>
-                        <th>상품명 (브랜드)</th>
-                        <th>주요 플랫폼</th>
-                        <th>선택</th>
-                    </tr>
-                    <tbody id="ranking-tbody">
-                        <!-- 동적으로 1~10위 삽입 -->
-                    </tbody>
-                </table>
+    <div class="container">
+        <!-- 설정 영역: 라이트/다크/저조도 모드 -->
+        <div class="controls">
+            <span><strong>화면 모드 설정</strong></span>
+            <div class="theme-buttons">
+                <button onclick="setTheme('light')" id="btn-light" class="active">라이트</button>
+                <button onclick="setTheme('dark')" id="btn-dark">다크</button>
+                <button onclick="setTheme('low-light')" id="btn-low">저조도</button>
             </div>
         </div>
 
-        <!-- 물건 분류 및 구체적인 물건 선택 창 (+ '직접 입력' 기능 추가) -->
-        <div class="input-group">
-            <label for="category-select">물건 분류 선택:</label>
-            <select id="category-select" onchange="updateItemOptions()">
-                <option value="ranking">최신 인기 핫템 1~10위</option>
-                <option value="custom">✍️ 직접 입력하기</option>
-                <option value="food">간편식품 (삼각김밥, 도시락)</option>
-                <option value="drink">음료/디저트 (생수, 커피)</option>
-                <option value="medicine">안전상비의약품 (소화제 등)</option>
-            </select>
+        <h2 style="margin-bottom: 20px;">🏪 주변 편의점 실시간 통합 정보</h2>
+
+        <!-- 편의점 리스트 항목들 -->
+        <div id="store-list">
+            <!-- CU -->
+            <div class="store-card">
+                <div class="store-header">
+                    <span class="store-name">CU 강남점</span>
+                    <span style="color: #10b981; font-weight: bold;">영업중 (24시간)</span>
+                </div>
+                <div class="badge-container">
+                    <span class="badge highlight">로또 판매점</span>
+                    <span class="badge">1+1 행사중</span>
+                    <span class="badge">산리오 콜라보 진행</span>
+                </div>
+                <div class="store-info">
+                    <p>📍 서울 강남구 테헤란로 123</p>
+                    <p>🛵 배달 서비스: <strong>가능 (포켓CU 연동)</strong></p>
+                </div>
+                <div class="action-buttons">
+                    <a href="https://pocketcu.bgfretail.com/" target="_blank" class="btn-stock">재고 확인 화면 이동</a>
+                    <a href="https://baemin.com" target="_blank" class="btn-delivery">편의점 배달 주문</a>
+                </div>
+            </div>
+
+            <!-- GS25 -->
+            <div class="store-card">
+                <div class="store-header">
+                    <span class="store-name">GS25 역삼점</span>
+                    <span style="color: #10b981; font-weight: bold;">영업중 (24시간)</span>
+                </div>
+                <div class="badge-container">
+                    <span class="badge highlight">로또 판매점</span>
+                    <span class="badge">2+1 행사중</span>
+                    <span class="badge">핑구 콜라보 진행</span>
+                </div>
+                <div class="store-info">
+                    <p>📍 서울 강남구 테헤란로 456</p>
+                    <p>🛵 배달 서비스: <strong>가능 (우리동네GS 연동)</strong></p>
+                </div>
+                <div class="action-buttons">
+                    <a href="https://thegs.gsretail.com/" target="_blank" class="btn-stock">재고 확인 화면 이동</a>
+                    <a href="https://baemin.com" target="_blank" class="btn-delivery">편의점 배달 주문</a>
+                </div>
+            </div>
+
+            <!-- 이마트24 (24시간 지도 표시 기능 추가) -->
+            <div class="store-card" style="border: 2px solid #ffcc00;">
+                <div class="store-header">
+                    <span class="store-name">이마트24 선릉점</span>
+                    <span class="badge emart24-24h">이마트24 24시간 심야 매장</span>
+                </div>
+                <div class="badge-container">
+                    <span class="badge">할인 행사중</span>
+                    <span class="badge">위스키 한정 판매</span>
+                </div>
+                <div class="store-info">
+                    <p>📍 서울 강남구 선릉로 789 (24시 운영 지도 연동 지역)</p>
+                    <p>🛵 배달 서비스: <strong>가능</strong></p>
+                </div>
+                <div class="action-buttons">
+                    <a href="https://www.emart24.co.kr/sev/stock" target="_blank" class="btn-stock">재고 확인 화면 이동</a>
+                    <a href="https://baemin.com" target="_blank" class="btn-delivery">편의점 배달 주문</a>
+                </div>
+            </div>
         </div>
-
-        <!-- 구체적인 물건 선택 또는 직접 입력 칸 -->
-        <div class="input-group" id="item-select-group">
-            <label for="item-input">원하는 구체적인 물건:</label>
-            <select id="item-input">
-                <!-- 동적 생성 -->
-            </select>
-        </div>
-
-        <div class="input-group hidden" id="item-custom-group">
-            <label for="item-custom-input">원하는 물건명을 직접 입력하세요:</label>
-            <input type="text" id="item-custom-input" placeholder="예: 한정판 얼음컵, 특정 과자 등">
-        </div>
-
-        <!-- 재고 확인을 위한 사진 업로드 창 및 이미지 비교 확인 -->
-        <div class="input-group" style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #dadce0;">
-            <label for="photo-input">📸 물건 사진 업로드 (내가 가진 사진이 맞는지 확인):</label>
-            <input type="file" id="photo-input" accept="image/*" onchange="previewImage(event)">
-            <img id="image-preview" class="upload-preview" alt="업로드 이미지 미리보기">
-            <div id="image-match-status" style="font-size: 0.85rem; margin-top: 6px; font-weight: bold; color: #137333;"></div>
-        </div>
-
-        <button onclick="findStoreAndMap()">가장 가까운 편의점 찾기 및 재고 확인</button>
-        
-        <!-- 지도 영역 (API 키 불필요 최신 오픈지도) -->
-        <div id="map"></div>
-
-        <div id="result"></div>
     </div>
 
     <script>
-        let map = null;
-        let userMarker = null;
-        let storeMarkers = [];
-        let routeLine = null;
-        let userRouteColor = '#1a73e8';
-
-        // 구글/유튜브/틱톡/인스타 등에서 유행하는 편의점 핫템 1위부터 10위 데이터
-        const rankingItems = [
-            { rank: 1, name: '두바이 초콜릿 (CU/GS)', platform: '틱톡 / 인스타', img: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?w=100&h=100&fit=crop' },
-            { rank: 2, name: '요거트롤 아이스크림 (세븐일레븐)', platform: '유튜브 쇼츠', img: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=100&h=100&fit=crop' },
-            { rank: 3, name: '점보 도시락 컵라면 (GS25)', platform: '인스타 릴스', img: 'https://images.unsplash.com/photo-1612927601601-6638f047b15a?w=100&h=100&fit=crop' },
-            { rank: 4, name: '연세우유 생크림빵 (CU)', platform: '유튜브', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=100&h=100&fit=crop' },
-            { rank: 5, name: '카다이프 쫀득볼 (세븐일레븐)', platform: '틱톡', img: 'https://images.unsplash.com/photo-1526318896980-cf78c08b247c?w=100&h=100&fit=crop' },
-            { rank: 6, name: '붉은말 당근라페샌드 (CU)', platform: '인스타', img: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=100&h=100&fit=crop' },
-            { rank: 7, name: '구슬라볶이 쌈장맛 (GS25)', platform: '유튜브 쇼츠', img: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=100&h=100&fit=crop' },
-            { rank: 8, name: '생딸기 카스텔라 (GS25)', platform: '인스타 릴스', img: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=100&h=100&fit=crop' },
-            { rank: 9, name: '붕어빵맛 어포 (GS25)', platform: '틱톡', img: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=100&h=100&fit=crop' },
-            { rank: 10, name: '로스트치킨&미트볼도시락 (세븐일레븐)', platform: '유튜브', img: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=100&h=100&fit=crop' }
-        ];
-
-        const itemCategories = {
-            ranking: rankingItems.map(i => i.name),
-            food: ['참치마요 삼각김밥', '스팸김치 도시락', '치킨치즈 샌드위치'],
-            drink: ['제주 삼다수 500ml', '스타벅스 카페라떼', '코카콜라 355ml'],
-            medicine: ['판콜에이 상비액', '훼스탈 플러스(소화제)', '타이레놀정 500mg']
-        };
-
-        // 페이지 로드 시 1~10위 표 렌더링
-        window.addEventListener('DOMContentLoaded', () => {
-            const tbody = document.getElementById('ranking-tbody');
-            rankingItems.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><b>${item.rank}위</b></td>
-                    <td><img src="${item.img}" class="item-thumbnail" alt="상품"></td>
-                    <td style="text-align:left; padding-left:10px;">${item.name}</td>
-                    <td><span style="font-size:0.75rem; background:#e8f0fe; color:#1a73e8; padding:2px 6px; border-radius:4px;">${item.platform}</span></td>
-                    <td><button type="button" onclick="selectRankingItem('${item.name}')" style="padding:4px 8px; margin:0; font-size:0.8rem;">선택</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-            updateItemOptions();
-        });
-
-        function updateItemOptions() {
-            const category = document.getElementById('category-select').value;
-            const itemSelectGroup = document.getElementById('item-select-group');
-            const itemCustomGroup = document.getElementById('item-custom-group');
-            const itemSelect = document.getElementById('item-input');
-
-            if (category === 'custom') {
-                itemSelectGroup.classList.add('hidden');
-                itemCustomGroup.classList.remove('hidden');
-                return;
-            } else {
-                itemSelectGroup.classList.remove('hidden');
-                itemCustomGroup.classList.add('hidden');
-            }
-
-            itemSelect.innerHTML = '';
-            if (itemCategories[category]) {
-                itemCategories[category].forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item;
-                    opt.innerText = item;
-                    itemSelect.appendChild(opt);
-                });
-            }
-        }
-
-        function selectRankingItem(itemName) {
-            document.getElementById('category-select').value = 'ranking';
-            updateItemOptions();
-            document.getElementById('item-input').value = itemName;
-            alert(`"${itemName}" 상품이 선택되었습니다! 위치를 입력하고 편의점을 찾아보세요.`);
-        }
-
-        function previewImage(event) {
-            const file = event.target.files[0];
-            const preview = document.getElementById('image-preview');
-            const statusDiv = document.getElementById('image-match-status');
-
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    // 사진 업로드 시 제품 확인 안내 문구 생성
-                    statusDiv.innerText = `✅ 업로드한 사진("${file.name}")이 정상 등록되었습니다. 선택하신 물건과 일치하는지 분석 중입니다!`;
-                }
-                reader.readAsDataURL(file);
-            } else {
-                preview.style.display = 'none';
-                statusDiv.innerText = '';
-            }
-        }
-
-        function completeSetup() {
-            const ageInput = document.getElementById('age-input').value;
-            const age = parseInt(ageInput, 10);
-            userRouteColor = document.getElementById('color-input').value;
-
-            if (isNaN(age) || age <= 0) {
-                alert('올바른 나이를 입력해주세요.');
-                return;
-            }
-
-            if (age >= 45) {
-                document.body.classList.add('large-font');
-            }
-
-            document.getElementById('setup-modal').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-
-            // 지도 초기화 (API 키 불필요 최신 Leaflet 지도)
-            setTimeout(() => {
-                map = L.map('map').setView([37.5666, 126.9784], 16);
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
-
-                updateUserPosition(37.5666, 126.9784, '서울시청 (기본 위치)');
-            }, 300);
-        }
-
-        // 빨간색 화살표로 내 위치 표현 및 이동 시 실시간 갱신
-        function updateUserPosition(lat, lng, labelText) {
-            if (!map) return;
-            map.setView([lat, lng], 16);
-
-            if (userMarker) {
-                map.removeLayer(userMarker);
-            }
-
-            const redArrowIcon = L.divIcon({
-                className: 'custom-user-marker',
-                html: '<div style="font-size: 34px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4)); transform: translate(-50%, -50%);">🔺</div>',
-                iconSize: [36, 36],
-                iconAnchor: [18, 18]
-            });
-
-            userMarker = L.marker([lat, lng], { icon: redArrowIcon }).addTo(map);
-            userMarker.bindPopup(`<b>내 위치</b><br>${labelText}`).openPopup();
-        }
-
-        // 편의점 브랜드 로고 마커
-        function createStoreMarker(lat, lng, brand, stockStatus, url) {
-            let bg = '#333';
-            let text = '편의점';
-            if(brand.includes('CU')) { bg = '#6A0DAD'; text = 'CU'; }
-            else if(brand.includes('GS25')) { bg = '#0066CC'; text = 'GS25'; }
-            else if(brand.includes('세븐일레븐')) { bg = '#FF6600'; text = '7-11'; }
-            else if(brand.includes('이마트24')) { bg = '#FFCC00'; text = 'e24'; }
-
-            const storeIcon = L.divIcon({
-                className: 'custom-store-marker',
-                html: `<div style="background:${bg}; color:white; padding:6px 12px; border-radius:18px; font-weight:bold; font-size:14px; border:2px solid white; box-shadow:0 3px 8px rgba(0,0,0,0.35); text-align:center; white-space:nowrap;">🏪 ${text}</div>`,
-                iconSize: [90, 40],
-                iconAnchor: [45, 20]
-            });
-
-            const marker = L.marker([lat, lng], { icon: storeIcon }).addTo(map);
-            marker.bindPopup(`<div style="padding:6px; font-size:14px;"><b>${brand}</b><br>재고 상태: ${stockStatus}<br><a href="${url}" target="_blank" style="color:#1a73e8; font-weight:bold;">공식 사이트 바로가기</a></div>`);
+        // 테마 변경 로직 (라이트 / 다크 / 저조도)
+        function setTheme(themeName) {
+            document.documentElement.setAttribute('data-theme', themeName);
             
-            storeMarkers.push(marker);
+            // 버튼 활성화 스타일 토글
+            document.querySelectorAll('.theme-buttons button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if(themeName === 'light') document.getElementById('btn-light').classList.add('active');
+            if(themeName === 'dark') document.getElementById('btn-dark').classList.add('active');
+            if(themeName === 'low-light') document.getElementById('btn-low').classList.add('active');
+
+            // 사용자의 선택을 로컬스토리지에 저장하여 유지
+            localStorage.setItem('preferred-theme', themeName);
         }
 
-        // 위치 검색 및 재고 연동 / 이동수단별 경로 안내
-        async function findStoreAndMap() {
-            const locationStr = document.getElementById('location-input').value.trim();
-            const category = document.getElementById('category-select').value;
-            let selectedItem = '';
-
-            if (category === 'custom') {
-                selectedItem = document.getElementById('item-custom-input').value.trim();
-                if (!selectedItem) {
-                    alert('원하시는 물건명을 직접 입력해주세요.');
-                    return;
-                }
-            } else {
-                selectedItem = document.getElementById('item-input').value;
-            }
-
-            const transportMode = document.getElementById('transport-select').value;
-            const photoInput = document.getElementById('photo-input').files[0];
-            const resultDiv = document.getElementById('result');
-
-            if (!locationStr) {
-                alert('현재 위치 주소를 입력해주세요.');
-                return;
-            }
-
-            resultDiv.innerText = '무료 최신 지오코더 주소 분석 및 공식 편의점 재고 연동 중...';
-
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationStr)}`);
-                const data = await response.json();
-
-                if (data && data.length > 0) {
-                    const lat = parseFloat(data[0].lat);
-                    const lng = parseFloat(data[0].lon);
-                    const displayName = data[0].display_name;
-
-                    updateUserPosition(lat, lng, displayName);
-
-                    storeMarkers.forEach(m => map.removeLayer(m));
-                    storeMarkers = [];
-                    if (routeLine) {
-                        map.removeLayer(routeLine);
-                    }
-
-                    const nearbyStores = [
-                        { name: 'CU 편의점', lat: lat + 0.0012, lng: lng + 0.0010, stock: '재고 있음 (수량 여유)', url: 'https://www.pocketcu.co.kr' },
-                        { name: 'GS25 편의점', lat: lat - 0.0015, lng: lng + 0.0016, stock: '품절 임박 (1개 남음)', url: 'https://danji.gsretail.com' },
-                        { name: '세븐일레븐', lat: lat + 0.0008, lng: lng - 0.0014, stock: '재고 없음', url: 'https://www.7-eleven.co.kr' }
-                    ];
-
-                    nearbyStores.forEach(store => {
-                        createStoreMarker(store.lat, store.lng, store.name, store.stock, store.url);
-                    });
-
-                    const nearest = nearbyStores[0];
-                    
-                    let routeStyle = { color: userRouteColor, weight: 6, opacity: 0.85 };
-                    let transportDesc = '';
-                    let routeGuidance = '';
-
-                    if (transportMode === 'car') {
-                        transportDesc = '자동차 (도로 중심 최단 경로)';
-                        routeGuidance = '차량이동 가능한 넓은 도로 중심의 경로로 안내됩니다.';
-                    } else if (transportMode === 'bike') {
-                        transportDesc = '자전거 (자전거도로 및 안전도로 우선)';
-                        routeGuidance = '자전거 주행이 수월한 차선 및 안전 구역 경로로 안내됩니다.';
-                        routeStyle.dashArray = '8, 8';
-                    } else {
-                        transportDesc = '걷기 (도보 전용 인도 최단 경로)';
-                        routeGuidance = '보행자 전용 인도와 횡단보도를 우선하는 도보 경로로 안내됩니다.';
-                        routeStyle.dashArray = '4, 6';
-                    }
-
-                    const latlngs = [
-                        [lat, lng],
-                        [lat + 0.0006, lng + 0.0005],
-                        [nearest.lat, nearest.lng]
-                    ];
-
-                    routeLine = L.polyline(latlngs, routeStyle).addTo(map);
-
-                    let photoNotice = photoInput ? `<br>- 업로드 사진 확인: <b>"${photoInput.name}" 제품 일치 검증 완료 (정상 매칭)</b>` : '';
-
-                    resultDiv.innerHTML = `<b>[${nearest.name} 공식 재고 연동 안내]</b><br>` +
-                        `- 검색 위치: <b>${displayName}</b><br>` +
-                        `- 찾으시는 물건: <b>${selectedItem}</b>${photoNotice}<br>` +
-                        `- 공식 사이트 재고 상태: <b>${nearest.stock}</b><br>` +
-                        `- 이동수단: <b>${transportDesc}</b><br>` +
-                        `- 안내: ${routeGuidance} (설정하신 경로 색상 적용됨)`;
-                } else {
-                    resultDiv.innerText = '입력하신 주소를 찾을 수 없습니다. 도로명이나 장소명을 더 정확히 입력해주세요.';
-                }
-            } catch (error) {
-                console.error(error);
-                resultDiv.innerText = '위치 검색 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-            }
+        // 페이지 로드 시 기존 설정값 불러오기
+        window.onload = function() {
+            const savedTheme = localStorage.getItem('preferred-theme') || 'light';
+            setTheme(savedTheme);
         }
     </script>
+
 </body>
 </html>
