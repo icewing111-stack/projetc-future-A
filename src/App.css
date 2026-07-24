@@ -1,0 +1,131 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f9;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.app-container.large-font {
+  font-size: 1.5rem;
+}
+
+.app-container.large-font input,
+.app-container.large-font select,
+.app-container.large-font button,
+.app-container.large-font textarea {
+  font-size: 1.3rem;
+  padding: 12px;
+}
+
+.age-card, .main-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 700px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input, select, textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.map-container-wrapper {
+  margin: 15px 0;
+}
+
+.map-desc {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.stock-links-section {
+  margin: 15px 0;
+  background: #fff3cd;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ffeeba;
+}
+
+.stock-links-section p {
+  margin: 0 0 8px 0;
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: #856404;
+}
+
+.link-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stock-btn {
+  display: block;
+  background-color: #28a745;
+  color: white;
+  text-align: center;
+  padding: 8px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.stock-btn:hover {
+  background-color: #218838;
+}
+
+.result-box {
+  margin-top: 20px;
+  background: #f8f9fa;
+  padding: 15px;
+  border-left: 5px solid #28a745;
+  border-radius: 4px;
+}
+
+.result-content {
+  white-space: pre-line;
+  line-height: 1.5;
+}
